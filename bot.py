@@ -1,4 +1,4 @@
-import logging, discord, discord.ext.commands, datetime, pytz, os
+import logging, discord, discord.ext.commands, datetime, pytz, os, discord_slash
 
 def tdFormat(td_object):
 	seconds = int(td_object.total_seconds())
@@ -22,7 +22,10 @@ def tdFormat(td_object):
 	return ', '.join(parts) + (' ago' if negative else '')
 
 def main():
+	guilds = [int(l) for l in os.getenv('DISCORD_GUILDS').split(',')]
+
 	bot = discord.ext.commands.Bot(command_prefix='%', intents=discord.Intents.default())
+	slash = discord_slash.SlashCommand(bot, sync_commands=True)
 
 	@bot.event
 	async def on_ready():
@@ -39,6 +42,10 @@ def main():
 		saturdayOps = datetime.datetime.combine(dateNow + datetime.timedelta((5 - dateNow.weekday()) % 7), timeOps)
 
 		await ctx.send(tdFormat((tuesdayOps if tuesdayOps < saturdayOps else saturdayOps) - now))
+
+	@slash.slash(name="ops", description="Time until OPs.", guild_ids=guilds)
+	async def _ops(ctx):
+		await ops(ctx)
 
 	bot.run(os.getenv('DISCORD_TOKEN'))
 
