@@ -36,10 +36,10 @@ def main():
 		"""Time until OPs."""
 		tz = pytz.timezone('Europe/London')
 		now = datetime.datetime.now(tz)
-		timeOps = datetime.time(19, tzinfo=tz)
+		timeOps = datetime.time(19)
 		dateNow = now.date()
-		tuesdayOps = datetime.datetime.combine(dateNow + datetime.timedelta((1 - dateNow.weekday()) % 7), timeOps)
-		saturdayOps = datetime.datetime.combine(dateNow + datetime.timedelta((5 - dateNow.weekday()) % 7), timeOps)
+		tuesdayOps = tz.localize(datetime.datetime.combine(dateNow + datetime.timedelta((1 - dateNow.weekday()) % 7), timeOps))
+		saturdayOps = tz.localize(datetime.datetime.combine(dateNow + datetime.timedelta((5 - dateNow.weekday()) % 7), timeOps))
 
 		await ctx.send(tdFormat((tuesdayOps if tuesdayOps < saturdayOps else saturdayOps) - now))
 
