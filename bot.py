@@ -62,6 +62,25 @@ def main():
 		"""Time until OPs."""
 		await ops(ctx)
 
+	@bot.command()
+	async def cas(ctx):
+		"""Close Air Support Briefing Form (9-Line)."""
+		await ctx.send('''**Close Air Support Briefing Form (9-Line)**
+1. IP/BP: "\_\_\_\_"
+2. Heading: "\_\_\_\_" Offset: "\_\_\_\_(left/right)"
+3. Distance: "\_\_\_\_"
+4. Target elevation: "\_\_\_\_"
+5. Target description: "\_\_\_\_"
+6. Target location: "\_\_\_\_"
+7. Type mark: "\_\_\_\_" Code: "\_\_\_\_" Laser to target line: "\_\_\_\_ degrees"
+8. Location of friendlies: "\_\_\_\_" Position marked by: "\_\_\_\_"
+9. Egress: "\_\_\_\_" Remarks (As appropriate): "\_\_\_\_"''')
+
+	@slash.slash(name="cas", guild_ids=guilds)
+	async def _cas(ctx):
+		"""Close Air Support Briefing Form (9-Line)."""
+		await cas(ctx)
+
 	bot.run(os.getenv('DISCORD_TOKEN'))
 
 if __name__ == '__main__':
