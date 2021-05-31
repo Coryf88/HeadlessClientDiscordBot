@@ -1,4 +1,4 @@
-import logging, discord, discord.ext.commands, datetime, pytz, os, discord_slash
+import logging, discord, discord.ext.commands, datetime, pytz, os, discord_slash, armaServer
 
 def tdFormat(td_object):
 	seconds = int(td_object.total_seconds())
@@ -34,9 +34,13 @@ def timeUntilHour(hour):
 def main():
 	# 'guildA,guildB'
 	guilds = [int(l) for l in os.getenv('DISCORD_GUILDS').split(',')]
+	# 'guildA:guildARoleA;guildB:guildBRoleA,guildBRoleB'
+	serverControlPermissions = {int(l.split(':', 1)[0]): discord_slash.utils.manage_commands.create_multi_ids_permission([int(l) for l in l.split(':', 1)[1].split(',')], discord_slash.model.SlashCommandPermissionType.ROLE, True) for l in os.getenv('DISCORD_SERVER_CONTROLLERS').split(';')}
 
 	bot = discord.ext.commands.Bot(command_prefix='%', intents=discord.Intents.default())
 	slash = discord_slash.SlashCommand(bot, sync_commands=True)
+
+	server = armaServer.ArmaServer()
 
 	@bot.event
 	async def on_ready():
@@ -65,6 +69,49 @@ def main():
 7. Type mark: "\_\_\_\_" Code: "\_\_\_\_" Laser to target line: "\_\_\_\_ degrees"
 8. Location of friendlies: "\_\_\_\_" Position marked by: "\_\_\_\_"
 9. Egress: "\_\_\_\_" Remarks (As appropriate): "\_\_\_\_"''')
+
+	@slash.slash(guild_ids=guilds, default_permission=False, permissions=serverControlPermissions)
+	async def status(ctx):
+		"""Arma 3 Server Status."""
+		await ctx.defer()
+		await ctx.send(server.status())
+
+	@slash.slash(guild_ids=guilds, default_permission=False, permissions=serverControlPermissions)
+	async def start(ctx):
+		"""Start Arma 3 Server."""
+		await ctx.defer()
+		await ctx.send(server.start())
+
+	@slash.slash(guild_ids=guilds, default_permission=False, permissions=serverControlPermissions)
+	async def stop(ctx):
+		"""Stop Arma 3 Server."""
+		await ctx.defer()
+		await ctx.send(server.stop())
+
+	@slash.slash(guild_ids=guilds, default_permission=False, permissions=serverControlPermissions)
+	async def restart(ctx):
+		"""Restart Arma 3 Server."""
+		await ctx.defer()
+		await ctx.send(server.restart())
+
+	@slash.slash(guild_ids=guilds, default_permission=False, permissions=serverControlPermissions, options=[
+		discord_slash.utils.manage_commands.create_option(name="preset",
+			description="The preset to change to.",
+			option_type=discord_slash.model.SlashCommandOptionType.STRING,
+			required=True,
+			choices=[
+				discord_slash.utils.manage_commands.create_choice(name='Normal', value=''),
+				discord_slash.utils.manage_commands.create_choice(name='World War 2', value='ww2'),
+				#discord_slash.utils.manage_commands.create_choice(name='Vietnam', value='vietnam'),
+				discord_slash.utils.manage_commands.create_choice(name='S.O.G. Prairie Fire', value='sog'),
+				discord_slash.utils.manage_commands.create_choice(name='Joint Op', value='jop')
+			]
+		)
+	])
+	async def preset(ctx, preset: str):
+		"""Change Arma 3 Server Preset."""
+		await ctx.defer()
+		await ctx.send(server.preset(preset))
 
 	bot.run(os.getenv('DISCORD_TOKEN'))
 
