@@ -21,7 +21,18 @@ def tdFormat(td_object):
 
 	return ', '.join(parts) + (' ago' if negative else '')
 
+def timeUntilHour(hour):
+	tz = pytz.timezone('Europe/London')
+	now = datetime.datetime.now(tz)
+	timeOps = datetime.time(hour)
+	dateNow = now.date()
+	tuesdayOps = tz.localize(datetime.datetime.combine(dateNow + datetime.timedelta((1 - dateNow.weekday()) % 7), timeOps))
+	saturdayOps = tz.localize(datetime.datetime.combine(dateNow + datetime.timedelta((5 - dateNow.weekday()) % 7), timeOps))
+
+	return tdFormat((tuesdayOps if tuesdayOps < saturdayOps else saturdayOps) - now)
+
 def main():
+	# 'guildA,guildB'
 	guilds = [int(l) for l in os.getenv('DISCORD_GUILDS').split(',')]
 
 	bot = discord.ext.commands.Bot(command_prefix='%', intents=discord.Intents.default())
@@ -32,19 +43,23 @@ def main():
 		await bot.change_presence(activity=discord.Game(name='Arma 3'))
 
 	@bot.command()
+	async def preops(ctx):
+		"""Time until Pre-OPs."""
+		await ctx.send(timeUntilHour(18))
+
+	@slash.slash(name="preops", guild_ids=guilds)
+	async def _preops(ctx):
+		"""Time until Pre-OPs."""
+		await preops(ctx)
+
+	@bot.command()
 	async def ops(ctx):
 		"""Time until OPs."""
-		tz = pytz.timezone('Europe/London')
-		now = datetime.datetime.now(tz)
-		timeOps = datetime.time(19)
-		dateNow = now.date()
-		tuesdayOps = tz.localize(datetime.datetime.combine(dateNow + datetime.timedelta((1 - dateNow.weekday()) % 7), timeOps))
-		saturdayOps = tz.localize(datetime.datetime.combine(dateNow + datetime.timedelta((5 - dateNow.weekday()) % 7), timeOps))
+		await ctx.send(timeUntilHour(19))
 
-		await ctx.send(tdFormat((tuesdayOps if tuesdayOps < saturdayOps else saturdayOps) - now))
-
-	@slash.slash(name="ops", description="Time until OPs.", guild_ids=guilds)
+	@slash.slash(name="ops", guild_ids=guilds)
 	async def _ops(ctx):
+		"""Time until OPs."""
 		await ops(ctx)
 
 	bot.run(os.getenv('DISCORD_TOKEN'))
