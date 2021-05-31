@@ -42,27 +42,17 @@ def main():
 	async def on_ready():
 		await bot.change_presence(activity=discord.Game(name='Arma 3'))
 
-	@bot.command()
+	@slash.slash(guild_ids=guilds)
 	async def preops(ctx):
 		"""Time until Pre-OPs."""
 		await ctx.send(timeUntilHour(18))
 
-	@slash.slash(name="preops", guild_ids=guilds)
-	async def _preops(ctx):
-		"""Time until Pre-OPs."""
-		await preops(ctx)
-
-	@bot.command()
+	@slash.slash(guild_ids=guilds)
 	async def ops(ctx):
 		"""Time until OPs."""
 		await ctx.send(timeUntilHour(19))
 
-	@slash.slash(name="ops", guild_ids=guilds)
-	async def _ops(ctx):
-		"""Time until OPs."""
-		await ops(ctx)
-
-	@bot.command()
+	@slash.slash(guild_ids=guilds)
 	async def cas(ctx):
 		"""Close Air Support Briefing Form (9-Line)."""
 		await ctx.send('''**Close Air Support Briefing Form (9-Line)**
@@ -75,11 +65,6 @@ def main():
 7. Type mark: "\_\_\_\_" Code: "\_\_\_\_" Laser to target line: "\_\_\_\_ degrees"
 8. Location of friendlies: "\_\_\_\_" Position marked by: "\_\_\_\_"
 9. Egress: "\_\_\_\_" Remarks (As appropriate): "\_\_\_\_"''')
-
-	@slash.slash(name="cas", guild_ids=guilds)
-	async def _cas(ctx):
-		"""Close Air Support Briefing Form (9-Line)."""
-		await cas(ctx)
 
 	bot.run(os.getenv('DISCORD_TOKEN'))
 
