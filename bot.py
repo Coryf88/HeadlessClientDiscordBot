@@ -32,9 +32,29 @@ def main():
 	# 'guildA,guildB'
 	guilds = [int(l) for l in os.getenv('DISCORD_GUILDS').split(',')]
 	# 'guildA:guildARoleA;guildB:guildBRoleA,guildBRoleB'
-	serverControlPermissions = {int(l.split(':', 1)[0]): discord_slash.utils.manage_commands.create_multi_ids_permission([int(l) for l in l.split(':', 1)[1].split(',')], discord_slash.model.SlashCommandPermissionType.ROLE, True) for l in os.getenv('DISCORD_SERVER_CONTROLLERS').split(';')} if os.getenv('DISCORD_SERVER_CONTROLLERS') else {}
+	serverControlPermissions = {int(l.split(':', 1)[0]): discord_slash.utils.manage_commands.create_multi_ids_permission([int(l) for l in l.split(':', 1)[1].split(',')], discord_slash.model.SlashCommandPermissionType.ROLE, True) for l in os.getenv('DISCORD_SERVER_CONTROLLERS').split(';')}
+	# 'messageA:roleA,messageB:roleB'
+	roleGiver = {int(k): int(v) for k, v in [l.split(':') for l in os.getenv('DISCORD_ROLE_EMOTE_GIVER').split(',')]}
 
-	bot = discord.ext.commands.Bot(command_prefix='%', intents=discord.Intents.default())
+	class HCBot(discord.ext.commands.Bot):
+		async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+			try:
+				if payload.message_id in roleGiver and payload.emoji == discord.PartialEmoji(name='👍'):
+					guild = self.get_guild(payload.guild_id)
+					if guild is None:
+						logging.error('on_raw_reaction_add: invalid guild - %s', payload.guild_id)
+						return
+
+					role = guild.get_role(roleGiver[payload.message_id])
+					if role is None:
+						logging.error('on_raw_reaction_add: invalid role - %s', roleGiver[payload.message_id])
+						return
+
+					await payload.member.add_roles(role)
+			except discord.HTTPException:
+				logging.exception('on_raw_reaction_add Exception')
+
+	bot = HCBot(command_prefix='%', intents=discord.Intents.default())
 	slash = discord_slash.SlashCommand(bot, sync_commands=True)
 
 	server = armaServer.ArmaServer()
