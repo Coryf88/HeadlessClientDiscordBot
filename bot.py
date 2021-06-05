@@ -21,21 +21,18 @@ def tdFormat(td_object):
 
 	return ', '.join(parts) + (' ago' if negative else '')
 
-def timeUntilHour(hour):
-	tz = pytz.timezone('Europe/London')
+def timeUntilHour(tzname, hour, *days):
+	tz = pytz.timezone(tzname)
 	now = datetime.datetime.now(tz)
-	timeOps = datetime.time(hour)
 	dateNow = now.date()
-	tuesdayOps = tz.localize(datetime.datetime.combine(dateNow + datetime.timedelta((1 - dateNow.weekday()) % 7), timeOps))
-	saturdayOps = tz.localize(datetime.datetime.combine(dateNow + datetime.timedelta((5 - dateNow.weekday()) % 7), timeOps))
-
-	return tdFormat((tuesdayOps if tuesdayOps < saturdayOps else saturdayOps) - now)
+	nextDatetime = sorted([tz.localize(datetime.datetime.combine(dateNow + datetime.timedelta((day - dateNow.weekday()) % 7), datetime.time(hour))) for day in sorted(days)])[0]
+	return tdFormat(nextDatetime - now)
 
 def main():
 	# 'guildA,guildB'
 	guilds = [int(l) for l in os.getenv('DISCORD_GUILDS').split(',')]
 	# 'guildA:guildARoleA;guildB:guildBRoleA,guildBRoleB'
-	serverControlPermissions = {int(l.split(':', 1)[0]): discord_slash.utils.manage_commands.create_multi_ids_permission([int(l) for l in l.split(':', 1)[1].split(',')], discord_slash.model.SlashCommandPermissionType.ROLE, True) for l in os.getenv('DISCORD_SERVER_CONTROLLERS').split(';')}
+	serverControlPermissions = {int(l.split(':', 1)[0]): discord_slash.utils.manage_commands.create_multi_ids_permission([int(l) for l in l.split(':', 1)[1].split(',')], discord_slash.model.SlashCommandPermissionType.ROLE, True) for l in os.getenv('DISCORD_SERVER_CONTROLLERS').split(';')} if os.getenv('DISCORD_SERVER_CONTROLLERS') else {}
 
 	bot = discord.ext.commands.Bot(command_prefix='%', intents=discord.Intents.default())
 	slash = discord_slash.SlashCommand(bot, sync_commands=True)
@@ -49,12 +46,32 @@ def main():
 	@slash.slash(guild_ids=guilds)
 	async def preops(ctx):
 		"""Time until Pre-OPs."""
-		await ctx.send(timeUntilHour(18))
+		await ctx.send(timeUntilHour('Europe/London', 18, 1, 5))
 
 	@slash.slash(guild_ids=guilds)
 	async def ops(ctx):
 		"""Time until OPs."""
-		await ctx.send(timeUntilHour(19))
+		await ctx.send(timeUntilHour('Europe/London', 19, 1, 5))
+
+	@slash.slash(guild_ids=guilds)
+	async def spreops(ctx):
+		"""Time until Special Pre-OPs."""
+		await ctx.send(timeUntilHour('Europe/London', 18, 6))
+
+	@slash.slash(guild_ids=guilds)
+	async def sops(ctx):
+		"""Time until Special OPs."""
+		await ctx.send(timeUntilHour('Europe/London', 19, 6))
+
+	@slash.slash(guild_ids=guilds)
+	async def bpreops(ctx):
+		"""Time until Burger Pre-OPs."""
+		await ctx.send(timeUntilHour('America/New_York', 19, 3))
+
+	@slash.slash(guild_ids=guilds)
+	async def bops(ctx):
+		"""Time until Burger OPs."""
+		await ctx.send(timeUntilHour('America/New_York', 20, 3))
 
 	@slash.slash(guild_ids=guilds)
 	async def cas(ctx):
